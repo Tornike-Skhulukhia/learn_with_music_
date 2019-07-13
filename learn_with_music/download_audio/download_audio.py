@@ -142,7 +142,10 @@ class AudioDownloader:
             file_loc_wav = os.path.join(self.audio_files_folder, filename_wav)
             
             if self.term_is_new():
-                url = f"https://www.youtube.com/results?search_query={self.search_term}"
+                from urllib.parse import urlencode
+                
+                params = {"search_query": self.search_term}
+                url = f"https://www.youtube.com/results?{urlencode(params)}"
 
                 session = HTMLSession(); r = session.get(url)
                 a_s = r.html.xpath('//a[starts-with(@href, "/watch?v=")]')
