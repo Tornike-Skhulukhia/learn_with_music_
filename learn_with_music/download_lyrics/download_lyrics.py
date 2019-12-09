@@ -15,6 +15,40 @@ else:
 import time
 
 
+###################################
+# temporary helper function
+###################################
+
+def get_lyrics_text_google(song):
+    from br_helper.br_helper import BrowserHelper
+    # breakpoint()
+
+    br = BrowserHelper(
+                    options={
+                        'visibility': 0,
+                        'disable_javascript': 1,
+                        'hide_images': True,
+                        })
+
+    br.google(song + ' lyrics')
+
+    try:
+        breakpoint()
+        lyrics_text = ["",
+                       *br.css1('div.BNeawe.tAd8D.AP7Wnd').text.split("\n"),
+                       ""]
+    except:
+        lyrics_text = False
+
+
+    br.close()
+
+    if not lyrics_text: print('Sorry, lyrics not found with just google...')
+    return lyrics_text
+###################################
+get_lyrics_text_google('eminem till i collapse')
+
+
 class LyricsDownloader:
     ''' class to download & save lyrics data '''
     def __init__(self, search_term, v=False):
@@ -134,13 +168,14 @@ class LyricsDownloader:
             # assume first match as correct one
             lyric_url = ""
             try:
-                lyric_url = r.html.xpath("//div[@class='panel'][last()]//td[@class='text-left visitedlyr']//@href")[0]
+                lyric_url = r.html.xpath(
+                    "//div[@class='panel'][last()]//td[@class='text-left visitedlyr']")[0].get_attribute('href')
                 # replace [chorus] ... kind of things -- make sure, not other parts are damaged !
                 r_2 = HTMLSession().get(lyric_url)
                 selector = '///div[@class="col-xs-12 col-lg-8 text-center"]'\
-                                                            '//div[not(@*)]//text()'
+                                                            '//div[not(@*)]'
 
-                lyrics_text = [i.strip() for i in r_2.html.xpath(selector) if i.strip()]
+                lyrics_text = [i.strip() for i in r_2.html.xpath(selector).text if i.strip()]
                 lyrics_text = [re.sub(r"\[.*\]", "", i) for i in lyrics_text]
 
                 # in case of first, or last line, if it is not empty, add empties
@@ -195,14 +230,17 @@ class LyricsDownloader:
                 lyrics_text = False
 
             if self.v:
-                if not lyrics_text:   
-                    print("Sorry, lyrics not found in source 2...")
+                if not lyrics_text:
+                    print("Sorry, lyrics not found in source 3...")
 
             return lyrics_text
 
 
         # Go download_from_azlyrics
         answer = download_from_azlyrics(self)
+
+        if not answer:
+            answer = get_lyrics_text_google(self.search_term.strip())
 
         if not answer:
             answer = download_from_lyrics_fandom(self)

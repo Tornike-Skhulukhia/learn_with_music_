@@ -143,29 +143,32 @@ class AudioDownloader:
             
             if self.term_is_new():
                 from urllib.parse import urlencode
-                
+                from br_helper.br_helper import BrowserHelper
+
                 params = {"search_query": self.search_term}
                 url = f"https://www.youtube.com/results?{urlencode(params)}"
 
-                session = HTMLSession(); r = session.get(url)
-                a_s = r.html.xpath('//a[starts-with(@href, "/watch?v=")]')
+                # session = HTMLSession(); r = session.get(url)
+                # a_s = r.html.xpath('//a[starts-with(@href, "/watch?v=")]')
                 # print(len(a_s))
+                if self.v: print("Browser started".center(50))
+                br = BrowserHelper(options={'visibility': False})
+                br.get(url)
 
-                if self.v: print("render started".center(50))
-
-                r.html.render()
-                if self.v: print("render completed".center(50))
+                if self.v: print("page loaded".center(50))
                 
-                a_s = r.html.xpath('//a[starts-with(@href, "/watch?v=")]//@href')
+                # a_s = r.html.xpath('//a[starts-with(@href, "/watch?v=")]//@href')
+                res_url = br.xpath1('//a[starts-with(@href, "/watch?v=")]').get_attribute('href')
+                # breakpoint()
 
                 # assume first one is correct result
-                res_url = "https://www.youtube.com" + a_s[0]
+                # res_url = "https://www.youtube.com" + a_s
 
                 # data to save in general db
                 self.audio_url = res_url
-                video_title = r.html.find(
+                video_title = br.css1(
                     "a#video-title.yt-simple-endpoint."
-                    "style-scope.ytd-video-renderer")[0].text
+                    "style-scope.ytd-video-renderer").text
                 self.audio_name_in_source = video_title.strip()
 
                 # os.chdir(save_location)
@@ -189,6 +192,7 @@ class AudioDownloader:
                 with youtube_dl.YoutubeDL(ydl_opts) as ydl:
                     ydl.download([res_url])
 
+                br.close()
 
                 # # download without python library | --prefer-ffmpeg (argument)
                 # comm = f"cd '{self.audio_files_folder}' &&"
